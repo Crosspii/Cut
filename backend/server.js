@@ -12,16 +12,41 @@ db.connect();
 
 // Middleware
 app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(express.static(path.join(__dirname, '../frontend')));
 
-// Routes
+// API Routes
 app.use('/api/auth', require('./routes/auth'));
+app.use('/api/barbers', require('./routes/barbers'));
 
 // Test route
 app.get('/api/test', (req, res) => {
-    res.json({ message: 'Cut API is working!', timestamp: new Date().toISOString() });
+    res.json({ 
+        message: 'Cut API is working!', 
+        timestamp: new Date().toISOString(),
+        version: '1.0.0'
+    });
+});
+
+// Health check
+app.get('/api/health', async (req, res) => {
+    try {
+        // Test database connection
+        await db.query('SELECT 1');
+        res.json({
+            status: 'healthy',
+            database: 'connected',
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        res.status(503).json({
+            status: 'unhealthy',
+            database: 'disconnected',
+            error: error.message,
+            timestamp: new Date().toISOString()
+        });
+    }
 });
 
 // Serve frontend
@@ -31,7 +56,24 @@ app.get('/', (req, res) => {
 
 // Error handling middleware
 app.use((error, req, res, next) => {
-    console.error(error.stack);
+    console.error('Error:', error.stack);
+    
+    // Handle specific error types
+    if (error.name === 'ValidationError') {
+        return res.status(400).json({
+            success: false,
+            message: 'Validation error',
+            errors: error.errors
+        });
+    }
+    
+    if (error.code === 'ER_DUP_ENTRY') {
+        return res.status(400).json({
+            success: false,
+            message: 'Duplicate entry error'
+        });
+    }
+    
     res.status(500).json({
         success: false,
         message: 'Something went wrong!',
@@ -39,10 +81,32 @@ app.use((error, req, res, next) => {
     });
 });
 
+// Handle 404 for API routes
+app.use('/api/', (req, res) => {
+    res.status(404).json({
+        success: false,
+        message: 'API endpoint not found'
+    });
+});
+
 app.listen(PORT, () => {
-    console.log(`Cut server running on port ${PORT}`);
-    console.log(`Frontend: http://localhost:${PORT}`);
-    console.log(`API: http://localhost:${PORT}/api/test`);
+    console.log(`🚀 Cut server running on port ${PORT}`);
+    console.log(`📱 Frontend: http://localhost:${PORT}`);
+    console.log(`🔌 API: http://localhost:${PORT}/api/test`);
+    console.log(`💚 Health: http://localhost:${PORT}/api/health`);
+});
+
+// Graceful shutdown
+process.on('SIGTERM', async () => {
+    console.log('SIGTERM received, shutting down gracefully');
+    await db.close();
+    process.exit(0);
+});
+
+process.on('SIGINT', async () => {
+    console.log('SIGINT received, shutting down gracefully');
+    await db.close();
+    process.exit(0);
 });
 
 module.exports = app;
