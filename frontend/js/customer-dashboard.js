@@ -35,11 +35,17 @@ class CustomerDashboard {
     // Load statistics
     static async loadStats() {
         try {
+            console.log('Loading dashboard stats...');
             const response = await Auth.makeRequest('/bookings/statistics?days=30');
+            
+            console.log('Stats response:', response);
             
             if (response.success) {
                 CustomerDashboard.stats = response.data;
                 CustomerDashboard.displayStats();
+            } else {
+                console.error('Stats API error:', response.message);
+                CustomerDashboard.displayEmptyStats();
             }
         } catch (error) {
             console.error('Load stats error:', error);
@@ -147,11 +153,17 @@ class CustomerDashboard {
     // Load upcoming appointments
     static async loadUpcomingAppointments() {
         try {
+            console.log('Loading upcoming appointments...');
             const response = await Auth.makeRequest('/bookings/upcoming?days=7');
+            
+            console.log('Upcoming appointments response:', response);
             
             if (response.success) {
                 CustomerDashboard.upcomingAppointments = response.data || [];
                 CustomerDashboard.displayUpcomingAppointments();
+            } else {
+                console.error('Upcoming appointments API error:', response.message);
+                CustomerDashboard.displayEmptyUpcoming();
             }
         } catch (error) {
             console.error('Load upcoming error:', error);
@@ -353,7 +365,7 @@ class CustomerDashboard {
                 CustomerDashboard.displayRecentActivity();
             }
         } catch (error) {
-            console.error('Load recent activity error:', error);
+            console.error('Load activity error:', error);
             CustomerDashboard.displayEmptyActivity();
         }
     }

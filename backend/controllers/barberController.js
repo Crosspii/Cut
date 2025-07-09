@@ -27,12 +27,15 @@ const getAllBarbers = async (req, res) => {
 
         const barbers = await Barber.findAll(filters);
         
+        // Calculate total count for pagination
+        const totalCount = barbers.length; // For now, we'll use the returned count
+        
         res.json(successResponse({
-            barbers,
+            barbers: barbers,
             pagination: {
                 page: parseInt(filters.page || 1),
                 limit: parseInt(filters.limit || 20),
-                total: barbers.length
+                total: totalCount
             }
         }));
 

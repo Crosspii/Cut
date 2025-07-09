@@ -24,21 +24,31 @@ class Barbers {
                 }
             }
             
+            console.log('Loading barbers with params:', params.toString());
+            
             // Make API request
             const response = await fetch(`/api/barbers?${params}`);
             const data = await response.json();
             
+            console.log('Barbers API response:', data);
+            
             if (data.success) {
-                Barbers.barbersData = data.data.barbers;
+                Barbers.barbersData = data.data.barbers || [];
                 Barbers.currentPage = page;
                 Barbers.currentFilters = filters;
                 
                 // Display results
-                Barbers.displayBarbers(data.data.barbers);
-                Barbers.updateResultsHeader(data.data.barbers.length);
-                Barbers.updatePagination(data.data.pagination);
+                Barbers.displayBarbers(data.data.barbers || []);
+                Barbers.updateResultsHeader(data.data.barbers ? data.data.barbers.length : 0);
+                
+                // Update pagination if available
+                if (data.data.pagination) {
+                    Barbers.updatePagination(data.data.pagination);
+                }
             } else {
-                throw new Error(data.message);
+                console.error('Barbers API error:', data.message);
+                Barbers.showNoResults();
+                Auth.showAlert(data.message || 'Failed to load barbers', 'danger');
             }
             
         } catch (error) {
@@ -56,7 +66,9 @@ class Barbers {
         const resultsHeader = document.getElementById('resultsHeader');
         const noResults = document.getElementById('noResults');
         
-        if (barbers.length === 0) {
+        console.log('Displaying barbers:', barbers);
+        
+        if (!barbers || barbers.length === 0) {
             grid.innerHTML = '';
             resultsHeader.classList.add('d-none');
             noResults.classList.remove('d-none');
@@ -71,9 +83,9 @@ class Barbers {
     
     // Create barber card HTML
     static createBarberCard(barber) {
-        const services = barber.services.slice(0, 3); // Show first 3 services
-        const rating = barber.average_rating || 0;
-        const reviews = barber.total_reviews || 0;
+        const services = Array.isArray(barber.services) ? barber.services.slice(0, 3) : [];
+        const rating = parseFloat(barber.average_rating) || 0;
+        const reviews = parseInt(barber.total_reviews) || 0;
         
         return `
             <div class="col-lg-4 col-md-6 mb-4">
@@ -85,10 +97,10 @@ class Barbers {
                         }
                     </div>
                     <div class="card-body">
-                        <h5 class="card-title">${barber.business_name}</h5>
+                        <h5 class="card-title">${barber.business_name || 'Barber Shop'}</h5>
                         <p class="text-muted mb-2">
                             <i class="fas fa-map-marker-alt"></i> 
-                            ${barber.neighborhood ? `${barber.neighborhood}, ` : ''}${barber.city}
+                            ${barber.neighborhood ? `${barber.neighborhood}, ` : ''}${barber.city || 'Unknown City'}
                         </p>
                         
                         <div class="rating mb-2">
@@ -106,7 +118,7 @@ class Barbers {
                                     ${service.name} - ${service.price} DH
                                 </span>
                             `).join('')}
-                            ${barber.services.length > 3 ? `<span class="text-muted">+${barber.services.length - 3} more</span>` : ''}
+                            ${services.length > 3 ? `<span class="text-muted">+${services.length - 3} more</span>` : ''}
                         </div>
                     </div>
                     <div class="card-footer bg-transparent">

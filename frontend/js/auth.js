@@ -4,7 +4,7 @@ class Auth {
     
     // Check if user is logged in
     static isLoggedIn() {
-        return localStorage.getItem('cut_token') !== null;
+        return localStorage.getItem('auth_token') !== null;
     }
     
     // Get current user data
@@ -15,18 +15,18 @@ class Auth {
     
     // Get auth token
     static getToken() {
-        return localStorage.getItem('cut_token');
+        return localStorage.getItem('auth_token');
     }
     
     // Set auth data
     static setAuthData(token, user) {
-        localStorage.setItem('cut_token', token);
+        localStorage.setItem('auth_token', token);
         localStorage.setItem('cut_user', JSON.stringify(user));
     }
     
     // Clear auth data
     static clearAuthData() {
-        localStorage.removeItem('cut_token');
+        localStorage.removeItem('auth_token');
         localStorage.removeItem('cut_user');
     }
     
@@ -287,5 +287,19 @@ class Auth {
     }
 }
 
+Auth.debugToken = function() {
+    const token = localStorage.getItem('auth_token');
+    console.log('Current token:', token);
+    
+    if (token) {
+        try {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            console.log('Token payload:', payload);
+            console.log('Token expires:', new Date(payload.exp * 1000));
+        } catch (e) {
+            console.log('Invalid token format');
+        }
+    }
+};
 // Export for use in other files
 window.Auth = Auth;
