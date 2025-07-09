@@ -7,18 +7,21 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Initialize database connection
+// Initializing database connection
 db.connect();
 
 // Middleware
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Serve static files from frontend directory
 app.use(express.static(path.join(__dirname, '../frontend')));
 
 // API Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/barbers', require('./routes/barbers'));
+app.use('/api/bookings', require('./routes/bookings'));
 
 // Test route
 app.get('/api/test', (req, res) => {
@@ -32,7 +35,6 @@ app.get('/api/test', (req, res) => {
 // Health check
 app.get('/api/health', async (req, res) => {
     try {
-        // Test database connection
         await db.query('SELECT 1');
         res.json({
             status: 'healthy',
@@ -49,8 +51,49 @@ app.get('/api/health', async (req, res) => {
     }
 });
 
-// Serve frontend
-app.get('/', (req, res) => {
+// Serve specific HTML pages
+app.get('/barbers.html', (req, res) => {
+    res.sendFile(path.join(__dirname, '../frontend/pages/barbers.html'));
+});
+
+app.get('/login.html', (req, res) => {
+    res.sendFile(path.join(__dirname, '../frontend/pages/login.html'));
+});
+
+app.get('/register.html', (req, res) => {
+    res.sendFile(path.join(__dirname, '../frontend/pages/register.html'));
+});
+
+app.get('/barber-profile.html', (req, res) => {
+    res.sendFile(path.join(__dirname, '../frontend/pages/barber-profile.html'));
+});
+
+app.get('/booking.html', (req, res) => {
+    res.sendFile(path.join(__dirname, '../frontend/pages/booking.html'));
+});
+
+app.get('/dashboard.html', (req, res) => {
+    res.sendFile(path.join(__dirname, '../frontend/pages/dashboard.html'));
+});
+
+app.get('/barber-dashboard.html', (req, res) => {
+    res.sendFile(path.join(__dirname, '../frontend/pages/barber-dashboard.html'));
+});
+
+app.get('/my-bookings.html', (req, res) => {
+    res.sendFile(path.join(__dirname, '../frontend/pages/my-bookings.html'));
+});
+
+// Handle 404 for API routes
+app.use('/api/*', (req, res) => {
+    res.status(404).json({
+        success: false,
+        message: 'API endpoint not found'
+    });
+});
+
+// Serve index.html for root and any other non-API routes
+app.get(['/', '/index.html'], (req, res) => {
     res.sendFile(path.join(__dirname, '../frontend/pages/index.html'));
 });
 
@@ -58,7 +101,6 @@ app.get('/', (req, res) => {
 app.use((error, req, res, next) => {
     console.error('Error:', error.stack);
     
-    // Handle specific error types
     if (error.name === 'ValidationError') {
         return res.status(400).json({
             success: false,
@@ -81,19 +123,11 @@ app.use((error, req, res, next) => {
     });
 });
 
-// Handle 404 for API routes
-app.use('/api/', (req, res) => {
-    res.status(404).json({
-        success: false,
-        message: 'API endpoint not found'
-    });
-});
-
 app.listen(PORT, () => {
-    console.log(`🚀 Cut server running on port ${PORT}`);
-    console.log(`📱 Frontend: http://localhost:${PORT}`);
-    console.log(`🔌 API: http://localhost:${PORT}/api/test`);
-    console.log(`💚 Health: http://localhost:${PORT}/api/health`);
+    console.log(`Cut server running on port ${PORT}`);
+    console.log(`Frontend: http://localhost:${PORT}`);
+    console.log(`API: http://localhost:${PORT}/api/test`);
+    console.log(`Health: http://localhost:${PORT}/api/health`);
 });
 
 // Graceful shutdown

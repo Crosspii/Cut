@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Appointment - Cut</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="../css/style.css" rel="stylesheet">
+    <style>
+        .time-slot {
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid #e9ecef;
+        }
+        .time-slot:hover {
+            border-color: #007bff;
+            background-color: #f8f9fa;
+        }
+        .time-slot.selected {
+            border-color: #007bff;
+            background-color: #007bff;
+            color: white;
+        }
+        .time-slot.unavailable {
+            background-color: #f8f9fa;
+            color: #6c757d;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        .service-card {
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid #e9ecef;
+        }
+        .service-card:hover {
+            border-color: #007bff;
+            transform: translateY(-2px);
+        }
+        .service-card.selected {
+            border-color: #007bff;
+            background-color: #f8f9ff;
+        }
+        .calendar-day {
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid #e9ecef;
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .calendar-day:hover {
+            background-color: #f8f9fa;
+        }
+        .calendar-day.selected {
+            background-color: #007bff;
+            color: white;
+        }
+        .calendar-day.disabled {
+            background-color: #f8f9fa;
+            color: #6c757d;
+            cursor: not-allowed;
+        }
+        .calendar-day.today {
+            border-color: #007bff;
+            font-weight: bold;
+        }
+        .step {
+            opacity: 0.5;
+        }
+        .step.active {
+            opacity: 1;
+        }
+        .step.completed {
+            opacity: 1;
+            color: #28a745;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="index.html">
+                <i class="fas fa-cut me-2"></i>Cut
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="index.html">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="barbers.html">Find Barbers</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav" id="navbar-auth">
+                    <!-- Auth links will be populated by JavaScript -->
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Booking Steps -->
+    <section class="py-4 bg-light">
+        <div class="container">
+            <div class="row">
+                <div class="col-12">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="step active" id="step1">
+                            <i class="fas fa-user-tie"></i>
+                            <span class="ms-2">1. Choose Barber</span>
+                        </div>
+                        <div class="step" id="step2">
+                            <i class="fas fa-cut"></i>
+                            <span class="ms-2">2. Select Service</span>
+                        </div>
+                        <div class="step" id="step3">
+                            <i class="fas fa-calendar"></i>
+                            <span class="ms-2">3. Pick Date & Time</span>
+                        </div>
+                        <div class="step" id="step4">
+                            <i class="fas fa-check"></i>
+                            <span class="ms-2">4. Confirm Booking</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Booking Content -->
+    <section class="py-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-12">
+                    <!-- Loading State -->
+                    <div id="loadingState" class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-3">Loading booking information...</p>
+                    </div>
+
+                    <!-- Step 1: Barber Selection -->
+                    <div id="barberStep" class="booking-step d-none">
+                        <div class="card">
+                            <div class="card-header">
+                                <h4><i class="fas fa-user-tie me-2"></i>Selected Barber</h4>
+                            </div>
+                            <div class="card-body" id="barberInfo">
+                                <!-- Barber info will be populated here -->
+                            </div>
+                            <div class="card-footer">
+                                <button class="btn btn-primary" onclick="Booking.nextStep()">
+                                    Continue to Services <i class="fas fa-arrow-right ms-2"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Service Selection -->
+                    <div id="serviceStep" class="booking-step d-none">
+                        <div class="card">
+                            <div class="card-header">
+                                <h4><i class="fas fa-cut me-2"></i>Choose a Service</h4>
+                            </div>
+                            <div class="card-body">
+                                <div id="servicesList" class="row">
+                                    <!-- Services will be populated here -->
+                                </div>
+                            </div>
+                            <div class="card-footer d-flex justify-content-between">
+                                <button class="btn btn-outline-secondary" onclick="Booking.prevStep()">
+                                    <i class="fas fa-arrow-left me-2"></i>Back
+                                </button>
+                                <button class="btn btn-primary" id="serviceNextBtn" disabled onclick="Booking.nextStep()">
+                                    Continue to Date & Time <i class="fas fa-arrow-right ms-2"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Date & Time Selection -->
+                    <div id="dateTimeStep" class="booking-step d-none">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h4><i class="fas fa-calendar me-2"></i>Select Date</h4>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="calendar">
+                                            <!-- Calendar will be populated here -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h4><i class="fas fa-clock me-2"></i>Available Times</h4>
+                                        <p class="mb-0 text-muted" id="selectedDateDisplay">Please select a date first</p>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="timeSlots">
+                                            <p class="text-muted text-center py-4">
+                                                <i class="fas fa-calendar-day fa-2x mb-3"></i><br>
+                                                Select a date to see available times
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <div class="card">
+                                    <div class="card-footer d-flex justify-content-between">
+                                        <button class="btn btn-outline-secondary" onclick="Booking.prevStep()">
+                                            <i class="fas fa-arrow-left me-2"></i>Back
+                                        </button>
+                                        <button class="btn btn-primary" id="dateTimeNextBtn" disabled onclick="Booking.nextStep()">
+                                            Continue to Confirmation <i class="fas fa-arrow-right ms-2"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 4: Confirmation -->
+                    <div id="confirmationStep" class="booking-step d-none">
+                        <div class="card">
+                            <div class="card-header">
+                                <h4><i class="fas fa-check me-2"></i>Confirm Your Booking</h4>
+                            </div>
+                            <div class="card-body">
+                                <div id="bookingSummary">
+                                    <!-- Booking summary will be populated here -->
+                                </div>
+                                <div class="mt-4">
+                                    <label for="bookingNotes" class="form-label">Additional Notes (Optional)</label>
+                                    <textarea class="form-control" id="bookingNotes" rows="3" 
+                                              placeholder="Any special requests or notes for the barber..."></textarea>
+                                </div>
+                            </div>
+                            <div class="card-footer d-flex justify-content-between">
+                                <button class="btn btn-outline-secondary" onclick="Booking.prevStep()">
+                                    <i class="fas fa-arrow-left me-2"></i>Back
+                                </button>
+                                <button class="btn btn-success btn-lg" id="confirmBookingBtn" onclick="Booking.confirmBooking()">
+                                    <span class="btn-text">
+                                        <i class="fas fa-check me-2"></i>Confirm Booking
+                                    </span>
+                                    <span class="loading d-none">
+                                        <i class="fas fa-spinner fa-spin me-2"></i>Processing...
+                                    </span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Success State -->
+                    <div id="successState" class="text-center py-5 d-none">
+                        <div class="card border-success">
+                            <div class="card-body">
+                                <i class="fas fa-check-circle fa-4x text-success mb-4"></i>
+                                <h3 class="text-success">Booking Confirmed!</h3>
+                                <p class="lead">Your appointment has been successfully booked.</p>
+                                <div id="bookingConfirmationDetails" class="mt-4">
+                                    <!-- Confirmation details will be shown here -->
+                                </div>
+                                <div class="mt-4">
+                                    <a href="my-bookings.html" class="btn btn-primary me-3">
+                                        <i class="fas fa-calendar-check me-2"></i>View My Bookings
+                                    </a>
+                                    <a href="barbers.html" class="btn btn-outline-primary">
+                                        <i class="fas fa-search me-2"></i>Book Another Appointment
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/booking.js"></script>
+    <script>
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check authentication
+            if (!Auth.checkAuth()) {
+                return;
+            }
+            
+            // Update navigation
+            updateNavigation();
+            
+            // Initialize booking system
+            Booking.init();
+        });
+
+        function updateNavigation() {
+            const navbarAuth = document.getElementById('navbar-auth');
+            
+            if (Auth.isLoggedIn()) {
+                const user = Auth.getCurrentUser();
+                navbarAuth.innerHTML = `
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user"></i> ${user.name}
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="dashboard.html">Dashboard</a></li>
+                            <li><a class="dropdown-item" href="my-bookings.html">My Bookings</a></li>
+                            ${user.role === 'barber' ? '<li><a class="dropdown-item" href="barber-dashboard.html">Barber Dashboard</a></li>' : ''}
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#" onclick="Auth.logout()">Logout</a></li>
+                        </ul>
+                    </li>
+                `;
+            } else {
+                navbarAuth.innerHTML = `
+                    <li class="nav-item">
+                        <a class="nav-link" href="login.html">Login</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link btn btn-outline-light ms-2 px-3" href="register.html">Sign Up</a>
+                    </li>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

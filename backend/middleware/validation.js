@@ -212,9 +212,89 @@ const validateBarberUpdate = (req, res, next) => {
     next();
 };
 
+// Validate booking data
+const validateBooking = (req, res, next) => {
+    const { 
+        barber_id, 
+        service_name, 
+        service_price, 
+        service_duration, 
+        appointment_date, 
+        appointment_time 
+    } = req.body;
+    
+    const errors = [];
+
+    // Required fields
+    if (!barber_id) {
+        errors.push('Barber ID is required');
+    }
+
+    if (!service_name || service_name.trim().length < 2) {
+        errors.push('Service name is required');
+    }
+
+    if (!service_price || service_price <= 0) {
+        errors.push('Valid service price is required');
+    }
+
+    if (!service_duration || service_duration <= 0) {
+        errors.push('Valid service duration is required');
+    }
+
+    if (!appointment_date) {
+        errors.push('Appointment date is required');
+    }
+
+    if (!appointment_time) {
+        errors.push('Appointment time is required');
+    }
+
+    // Validate date format
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (appointment_date && !dateRegex.test(appointment_date)) {
+        errors.push('Invalid date format. Use YYYY-MM-DD');
+    }
+
+    // Validate time format
+    const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
+    if (appointment_time && !timeRegex.test(appointment_time)) {
+        errors.push('Invalid time format. Use HH:MM');
+    }
+
+    // Check if date is not in the past
+    if (appointment_date) {
+        const appointmentDate = new Date(appointment_date);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        if (appointmentDate < today) {
+            errors.push('Cannot book appointments for past dates');
+        }
+    }
+
+    // Check if appointment is not too far in the future (e.g., 3 months)
+    if (appointment_date) {
+        const appointmentDate = new Date(appointment_date);
+        const maxDate = new Date();
+        maxDate.setMonth(maxDate.getMonth() + 3);
+
+        if (appointmentDate > maxDate) {
+            errors.push('Cannot book appointments more than 3 months in advance');
+        }
+    }
+
+    if (errors.length > 0) {
+        return res.status(400).json(errorResponse('Validation failed', errors));
+    }
+
+    next();
+};
+
 module.exports = {
     validateRegistration,
     validateLogin,
     validateBarberProfile,
-    validateBarberUpdate
+    validateBarberUpdate,
+    validateBooking
 };
