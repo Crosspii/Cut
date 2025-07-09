@@ -351,3 +351,185 @@ body {
         color: #a0aec0 !important;
     }
 }
+
+/* Star Rating Styles */
+.star-rating {
+    font-size: 2rem;
+    cursor: pointer;
+    user-select: none;
+}
+
+.star-rating .star {
+    transition: all 0.2s ease;
+    margin: 0 0.1rem;
+}
+
+.star-rating .star:hover {
+    transform: scale(1.1);
+}
+
+/* Rating Breakdown Styles */
+.rating-breakdown .progress {
+    background-color: #f8f9fa;
+}
+
+.rating-breakdown .rating-label {
+    font-size: 0.9rem;
+    color: #6c757d;
+}
+
+.rating-breakdown .rating-count {
+    font-size: 0.9rem;
+    color: #6c757d;
+    text-align: right;
+}
+
+/* Review Card Styles */
+.reviews-list .card {
+    border: 1px solid #e9ecef;
+    transition: all 0.3s ease;
+}
+
+.reviews-list .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.rating-stars i {
+    font-size: 0.9rem;
+    margin-right: 0.1rem;
+}
+
+/* Review Modal Styles */
+#reviewModal .star-rating {
+    padding: 1rem;
+    border: 2px dashed #dee2e6;
+    border-radius: 0.5rem;
+    background-color: #f8f9fa;
+    transition: all 0.3s ease;
+}
+
+#reviewModal .star-rating:hover {
+    border-color: #ffc107;
+    background-color: #fff9e6;
+}
+
+/* Character counter styles */
+.form-text .text-warning {
+    font-weight: bold;
+}
+
+.form-text .text-danger {
+    font-weight: bold;
+}
+
+/* Rating text animations */
+#ratingText {
+    transition: all 0.3s ease;
+    min-height: 1.5rem;
+}
+
+/* Mobile responsiveness for stars */
+@media (max-width: 768px) {
+    .star-rating {
+        font-size: 1.5rem;
+    }
+    
+    .rating-breakdown .rating-label {
+        width: 50px !important;
+        font-size: 0.8rem;
+    }
+    
+    .rating-breakdown .rating-count {
+        width: 30px !important;
+        font-size: 0.8rem;
+    }
+}
+
+
+
+/* Success animations */
+@keyframes slideInRight {
+    from { transform: translateX(300px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes fadeInUp {
+    from { transform: translateY(30px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.alert {
+    animation: slideInRight 0.5s ease-out;
+}
+
+.card {
+    animation: fadeInUp 0.6s ease-out;
+}
+
+/* Loading improvements */
+.spinner-border {
+    animation-duration: 0.75s;
+}
+
+/* Button hover effects */
+.btn {
+    transition: all 0.3s ease;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+/* Rating stars glow effect */
+.text-warning {
+    text-shadow: 0 0 10px rgba(255, 193, 7, 0.5);
+}
+
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+    .hero {
+        text-align: center;
+        padding: 3rem 0;
+    }
+    
+    .display-4 {
+        font-size: 2.5rem;
+    }
+    
+    .btn-lg {
+        padding: 0.75rem 1.5rem;
+        font-size: 1rem;
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+    
+    .modal-dialog {
+        margin: 0.5rem;
+    }
+    
+    .booking-step {
+        padding: 1rem 0;
+    }
+    
+    .dashboard-card {
+        margin-bottom: 1rem;
+    }
+}
+
+/* Touch-friendly buttons */
+@media (max-width: 768px) {
+    .btn {
+        min-height: 44px;
+        min-width: 44px;
+    }
+    
+    .btn-sm {
+        min-height: 36px;
+        min-width: 36px;
+    }
+}

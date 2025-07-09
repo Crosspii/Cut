@@ -22,6 +22,8 @@ app.use(express.static(path.join(__dirname, '../frontend')));
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/barbers', require('./routes/barbers'));
 app.use('/api/bookings', require('./routes/bookings'));
+app.use('/api/reviews', require('./routes/reviews'));
+
 
 // Test route
 app.get('/api/test', (req, res) => {
@@ -85,7 +87,7 @@ app.get('/my-bookings.html', (req, res) => {
 });
 
 // Handle 404 for API routes
-app.use('/api/*', (req, res) => {
+app.use('/api/', (req, res) => {
     res.status(404).json({
         success: false,
         message: 'API endpoint not found'

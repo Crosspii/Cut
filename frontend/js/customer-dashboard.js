@@ -23,7 +23,8 @@ class CustomerDashboard {
                 CustomerDashboard.loadStats(),
                 CustomerDashboard.loadUpcomingAppointments(),
                 CustomerDashboard.loadFavoriteBarbers(),
-                CustomerDashboard.loadRecentActivity()
+                CustomerDashboard.loadRecentActivity(),
+                CustomerDashboard.loadReviewStats()
             ]);
         } catch (error) {
             console.error('Load dashboard error:', error);
@@ -466,6 +467,67 @@ class CustomerDashboard {
         const hour12 = hours % 12 || 12;
         const ampm = hours >= 12 ? 'PM' : 'AM';
         return `${hour12}:${minutes} ${ampm}`;
+    }
+
+        // Load customer's review statistics
+    static async loadReviewStats() {
+        try {
+            const response = await Auth.makeRequest('/reviews/my-reviews');
+            
+            if (response.success) {
+                const reviews = response.data.reviews || [];
+                CustomerDashboard.displayReviewStats(reviews);
+            }
+        } catch (error) {
+            console.error('Load review stats error:', error);
+        }
+    }
+
+    // Display review statistics
+    static displayReviewStats(reviews) {
+        if (reviews.length === 0) return;
+
+        const avgRating = reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
+        
+        // Add review stats to the dashboard
+        const quickActionsSection = document.querySelector('.quick-actions').closest('section');
+        
+        const reviewStatsHTML = `
+            <section class="py-4">
+                <div class="container">
+                    <div class="card dashboard-card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-star me-2 text-warning"></i>Your Reviews</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row text-center">
+                                <div class="col-md-3">
+                                    <div class="h4 text-warning">${reviews.length}</div>
+                                    <small class="text-muted">Reviews Written</small>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="h4 text-primary">${avgRating.toFixed(1)}</div>
+                                    <small class="text-muted">Average Rating Given</small>
+                                </div>
+                                <div class="col-md-6">
+                                    <button class="btn btn-outline-primary" onclick="CustomerDashboard.viewMyReviews()">
+                                        <i class="fas fa-eye me-2"></i>View All My Reviews
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        `;
+        
+        quickActionsSection.insertAdjacentHTML('afterend', reviewStatsHTML);
+    }
+
+    // View customer's reviews
+    static viewMyReviews() {
+        // For now, just show an alert. You can enhance this later
+        Auth.showAlert('Your reviews feature - coming in the next update!', 'info');
     }
 
     // View appointment details
