@@ -86,6 +86,14 @@ app.get('/my-bookings.html', (req, res) => {
     res.sendFile(path.join(__dirname, '../frontend/pages/my-bookings.html'));
 });
 
+app.get('/booking-debug.html', (req, res) => {
+    res.sendFile(path.join(__dirname, '../frontend/pages/booking-debug.html'));
+});
+
+app.get('/test-auth.html', (req, res) => {
+    res.sendFile(path.join(__dirname, '../frontend/pages/test-auth.html'));
+});
+
 // Handle 404 for API routes
 app.use('/api/', (req, res) => {
     res.status(404).json({

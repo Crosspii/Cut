@@ -8,6 +8,10 @@ class BarberDashboard {
     // Initialize dashboard
     static init() {
         const user = Auth.getCurrentUser();
+        console.log('Barber dashboard init - User:', user);
+        console.log('Is logged in:', Auth.isLoggedIn());
+        console.log('Token:', Auth.getToken());
+        
         if (user) {
             document.getElementById('welcomeMessage').textContent = 
                 `Welcome back, ${user.name}! Here's your business overview.`;
@@ -33,14 +37,22 @@ class BarberDashboard {
     // Load statistics
     static async loadStats() {
         try {
+            console.log('Loading barber dashboard stats...');
             const response = await Auth.makeRequest('/bookings/statistics?days=30');
+            
+            console.log('Barber stats response:', response);
             
             if (response.success) {
                 BarberDashboard.stats = response.data;
                 BarberDashboard.displayStats();
+            } else {
+                console.error('Barber stats API error:', response.message);
+                BarberDashboard.displayEmptyStats();
             }
         } catch (error) {
-            console.error('Load stats error:', error);
+            console.error('Load barber stats error:', error);
+            console.error('Error details:', error.message, error.stack);
+            BarberDashboard.displayEmptyStats();
         }
     }
 
@@ -93,18 +105,74 @@ class BarberDashboard {
         `;
     }
 
+    // Display empty stats (for new barbers)
+    static displayEmptyStats() {
+        const statsCards = document.getElementById('statsCards');
+        
+        statsCards.innerHTML = `
+            <div class="col-md-3 mb-3">
+                <div class="card stats-card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-calendar-check fa-2x mb-3"></i>
+                        <h3>0</h3>
+                        <h6 class="card-title">Total Bookings</h6>
+                        <small>Start your business!</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card stats-card revenue">
+                    <div class="card-body text-center">
+                        <i class="fas fa-money-bill-wave fa-2x mb-3"></i>
+                        <h3>0 DH</h3>
+                        <h6 class="card-title">Total Revenue</h6>
+                        <small>Your earnings will appear here</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card stats-card bookings">
+                    <div class="card-body text-center">
+                        <i class="fas fa-clock fa-2x mb-3"></i>
+                        <h3>0</h3>
+                        <h6 class="card-title">Pending</h6>
+                        <small>No pending bookings</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card stats-card rating">
+                    <div class="card-body text-center">
+                        <i class="fas fa-star fa-2x mb-3"></i>
+                        <h3>0 DH</h3>
+                        <h6 class="card-title">Avg. Booking</h6>
+                        <small>Set your prices</small>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
     // Load today's appointments
     static async loadTodayAppointments() {
         try {
+            console.log('Loading today\'s appointments...');
             const today = new Date().toISOString().split('T')[0];
             const response = await Auth.makeRequest(`/bookings/my-bookings?from_date=${today}&to_date=${today}`);
+            
+            console.log('Today appointments response:', response);
             
             if (response.success) {
                 BarberDashboard.todayAppointments = response.data.bookings || [];
                 BarberDashboard.displayTodayAppointments();
+            } else {
+                console.error('Today appointments API error:', response.message);
+                BarberDashboard.displayEmptyTodayAppointments();
             }
         } catch (error) {
             console.error('Load today appointments error:', error);
+            console.error('Error details:', error.message, error.stack);
+            BarberDashboard.displayEmptyTodayAppointments();
         }
     }
 
@@ -137,17 +205,40 @@ class BarberDashboard {
         ).join('');
     }
 
+    // Display empty today's appointments
+    static displayEmptyTodayAppointments() {
+        const container = document.getElementById('todayAppointments');
+        const countBadge = document.getElementById('todayCount');
+        
+        countBadge.textContent = '0';
+        container.innerHTML = `
+            <div class="text-center py-4 text-muted">
+                <i class="fas fa-calendar-day fa-3x mb-3"></i>
+                <h6>No appointments today</h6>
+                <p>Enjoy your free day!</p>
+            </div>
+        `;
+    }
+
     // Load upcoming appointments
     static async loadUpcoming() {
         try {
+            console.log('Loading upcoming appointments...');
             const response = await Auth.makeRequest('/bookings/upcoming?days=7');
+            
+            console.log('Upcoming appointments response:', response);
             
             if (response.success) {
                 BarberDashboard.upcomingAppointments = response.data || [];
                 BarberDashboard.displayUpcomingAppointments();
+            } else {
+                console.error('Upcoming appointments API error:', response.message);
+                BarberDashboard.displayEmptyUpcoming();
             }
         } catch (error) {
             console.error('Load upcoming error:', error);
+            console.error('Error details:', error.message, error.stack);
+            BarberDashboard.displayEmptyUpcoming();
         }
     }
 
@@ -191,6 +282,18 @@ class BarberDashboard {
                 </div>
             `;
         }).join('');
+    }
+
+    // Display empty upcoming appointments
+    static displayEmptyUpcoming() {
+        const container = document.getElementById('upcomingAppointments');
+        container.innerHTML = `
+            <div class="text-center py-4 text-muted">
+                <i class="fas fa-calendar-week fa-3x mb-3"></i>
+                <h6>No upcoming appointments</h6>
+                <p>Your schedule is clear for the next 7 days.</p>
+            </div>
+        `;
     }
 
     // Group appointments by date
@@ -333,19 +436,19 @@ class BarberDashboard {
             loading.classList.remove('d-none');
             confirmBtn.disabled = true;
 
+            console.log('Sending PATCH to update status:', newStatus, 'for booking', BarberDashboard.appointmentToUpdate);
             const response = await Auth.makeRequest(`/bookings/${BarberDashboard.appointmentToUpdate}/status`, {
                 method: 'PATCH',
                 body: JSON.stringify({ status: newStatus })
             });
+            console.log('Status update response:', response);
 
             if (response.success) {
                 Auth.showAlert('Appointment status updated successfully', 'success');
-                
                 // Close modal
                 const modal = bootstrap.Modal.getInstance(document.getElementById('statusModal'));
                 modal.hide();
-                
-                // Refresh data
+                // Always refresh data after update
                 await BarberDashboard.refreshData();
             } else {
                 throw new Error(response.message);
@@ -353,13 +456,12 @@ class BarberDashboard {
 
         } catch (error) {
             console.error('Update status error:', error);
-            Auth.showAlert(error.message || 'Failed to update status. Please try again.', 'danger');
+            Auth.showAlert('Failed to update status: ' + (error.message || error), 'danger');
         } finally {
             // Reset button state
             const confirmBtn = document.getElementById('updateStatusBtn');
             const btnText = confirmBtn.querySelector('.btn-text');
             const loading = confirmBtn.querySelector('.loading');
-            
             btnText.classList.remove('d-none');
             loading.classList.add('d-none');
             confirmBtn.disabled = false;

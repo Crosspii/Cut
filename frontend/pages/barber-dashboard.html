@@ -67,6 +67,9 @@
         </div>
     </nav>
 
+    <!-- Alert Container -->
+    <div id="alert-container" class="container mt-3"></div>
+
     <!-- Header -->
     <section class="py-4 bg-light">
         <div class="container">
@@ -244,11 +247,27 @@
     <script>
         // Initialize page
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('Barber dashboard page loaded');
+            console.log('Auth check:', Auth.checkAuth());
+            console.log('Role check:', Auth.checkRole('barber'));
+            
             // Check authentication and role
-            if (!Auth.checkAuth() || !Auth.checkRole('barber')) {
+            if (!Auth.checkAuth()) {
+                console.log('Authentication failed - redirecting to login');
+                return;
+            }
+            
+            if (!Auth.checkRole('barber')) {
+                console.log('Role check failed - user is not a barber');
+                Auth.showAlert('You do not have permission to access this page', 'danger');
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 2000);
                 return;
             }
 
+            console.log('Authentication and role checks passed - initializing barber dashboard');
+            
             // Update navigation
             updateNavigation();
 
@@ -267,9 +286,9 @@
                             <i class="fas fa-user"></i> ${user.name}
                         </a>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="dashboard.html">Dashboard</a></li>
-                            <li><a class="dropdown-item" href="my-bookings.html">My Bookings</a></li>
+                            <li><a class="dropdown-item" href="index.html">Home</a></li>
                             <li><a class="dropdown-item" href="barber-dashboard.html">Barber Dashboard</a></li>
+                            <li><a class="dropdown-item" href="barber-profile.html">Edit Profile</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="#" onclick="Auth.logout()">Logout</a></li>
                         </ul>

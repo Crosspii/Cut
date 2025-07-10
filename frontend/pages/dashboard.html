@@ -74,6 +74,9 @@
         </div>
     </nav>
 
+    <!-- Alert Container -->
+    <div id="alert-container" class="container mt-3"></div>
+
     <!-- Header -->
     <section class="py-4 bg-light">
         <div class="container">
@@ -83,9 +86,12 @@
                     <p class="text-muted mb-0" id="welcomeMessage">Welcome back! Here's your appointment overview.</p>
                 </div>
                 <div class="col-md-4 text-md-end">
-                    <a href="barbers.html" class="btn btn-primary">
+                    <a href="barbers.html" class="btn btn-primary me-2">
                         <i class="fas fa-plus me-2"></i>Book New Appointment
                     </a>
+                    <button class="btn btn-outline-secondary" id="refreshDashboardBtn">
+                        <i class="fas fa-sync-alt me-2"></i>Refresh
+                    </button>
                 </div>
             </div>
         </div>
@@ -242,16 +248,36 @@
     <script>
         // Initialize page
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('Dashboard page loaded');
+            console.log('Auth check:', Auth.checkAuth());
+            console.log('Role check:', Auth.checkRole('customer'));
+            
             // Check authentication and role
-            if (!Auth.checkAuth() || !Auth.checkRole('customer')) {
+            if (!Auth.checkAuth()) {
+                console.log('Authentication failed - redirecting to login');
+                return;
+            }
+            
+            if (!Auth.checkRole('customer')) {
+                console.log('Role check failed - user is not a customer');
+                Auth.showAlert('You do not have permission to access this page', 'danger');
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 2000);
                 return;
             }
 
+            console.log('Authentication and role checks passed - initializing dashboard');
+            
             // Update navigation
             updateNavigation();
 
             // Initialize dashboard
             CustomerDashboard.init();
+
+            document.getElementById('refreshDashboardBtn').addEventListener('click', function() {
+                CustomerDashboard.refreshData();
+            });
         });
 
         function updateNavigation() {
@@ -265,9 +291,10 @@
                             <i class="fas fa-user"></i> ${user.name}
                         </a>
                         <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="index.html">Home</a></li>
+                            <li><a class="dropdown-item" href="barbers.html">Find Barbers</a></li>
                             <li><a class="dropdown-item" href="dashboard.html">Dashboard</a></li>
                             <li><a class="dropdown-item" href="my-bookings.html">My Bookings</a></li>
-                            ${user.role === 'barber' ? '<li><a class="dropdown-item" href="barber-dashboard.html">Barber Dashboard</a></li>' : ''}
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="#" onclick="Auth.logout()">Logout</a></li>
                         </ul>

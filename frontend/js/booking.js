@@ -10,11 +10,26 @@ class Booking {
 
     // Initialize booking system
     static init() {
+        console.log('Initializing booking system...');
+        
+        // Check authentication first
+        if (!Auth.isLoggedIn()) {
+            console.log('User not logged in, redirecting to login...');
+            Auth.showAlert('Please login to book an appointment.', 'warning');
+            setTimeout(() => {
+                window.location.href = 'login.html';
+            }, 2000);
+            return;
+        }
+
         // Get barber ID from URL parameter
         const urlParams = new URLSearchParams(window.location.search);
         const barberId = urlParams.get('barber');
 
+        console.log('Barber ID from URL:', barberId);
+
         if (!barberId) {
+            console.log('No barber ID found in URL');
             Auth.showAlert('No barber selected. Redirecting to barber listing...', 'warning');
             setTimeout(() => {
                 window.location.href = 'barbers.html';
@@ -29,24 +44,27 @@ class Booking {
     // Load barber information
     static async loadBarberInfo(barberId) {
         try {
+            console.log('Loading barber info for ID:', barberId);
             Booking.showLoading();
 
             const response = await fetch(`/api/barbers/${barberId}`);
             const data = await response.json();
+
+            console.log('Barber API response:', data);
 
             if (data.success) {
                 Booking.selectedBarber = data.data;
                 Booking.displayBarberInfo();
                 Booking.showStep(1);
             } else {
-                throw new Error(data.message);
+                throw new Error(data.message || 'Failed to load barber information');
             }
         } catch (error) {
             console.error('Load barber info error:', error);
-            Auth.showAlert('Failed to load barber information. Please try again.', 'danger');
+            Auth.showAlert(`Failed to load barber information: ${error.message}. Please try again.`, 'danger');
             setTimeout(() => {
                 window.location.href = 'barbers.html';
-            }, 2000);
+            }, 3000);
         } finally {
             Booking.hideLoading();
         }
@@ -56,6 +74,23 @@ class Booking {
     static displayBarberInfo() {
         const barberInfo = document.getElementById('barberInfo');
         const barber = Booking.selectedBarber;
+
+        console.log('Displaying barber info:', barber);
+
+        if (!barber) {
+            console.error('No barber data available');
+            barberInfo.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Error: No barber information available
+                </div>
+            `;
+            return;
+        }
+
+        // Convert rating to number to avoid toFixed() error
+        const rating = parseFloat(barber.average_rating) || 0;
+        const reviews = parseInt(barber.total_reviews) || 0;
 
         barberInfo.innerHTML = `
             <div class="row">
@@ -70,14 +105,14 @@ class Booking {
                     </div>
                 </div>
                 <div class="col-md-9">
-                    <h5>${barber.business_name}</h5>
+                    <h5>${barber.business_name || 'Barber Shop'}</h5>
                     <p class="text-muted mb-2">
                         <i class="fas fa-map-marker-alt"></i> 
-                        ${barber.address}, ${barber.neighborhood ? `${barber.neighborhood}, ` : ''}${barber.city}
+                        ${barber.address || 'Address not available'}, ${barber.neighborhood ? `${barber.neighborhood}, ` : ''}${barber.city || 'City not available'}
                     </p>
                     <div class="rating mb-2">
-                        ${Booking.generateStars(barber.average_rating || 0)}
-                        <span class="ms-2">${(barber.average_rating || 0).toFixed(1)} (${barber.total_reviews || 0} reviews)</span>
+                        ${Booking.generateStars(rating)}
+                        <span class="ms-2">${rating.toFixed(1)} (${reviews} reviews)</span>
                     </div>
                     ${barber.description ? `<p class="mb-2">${barber.description}</p>` : ''}
                     ${barber.phone ? `<p class="mb-0"><i class="fas fa-phone"></i> ${barber.phone}</p>` : ''}
@@ -88,20 +123,25 @@ class Booking {
 
     // Generate star rating HTML
     static generateStars(rating) {
-        const fullStars = Math.floor(rating);
-        const hasHalfStar = rating % 1 >= 0.5;
+        // Ensure rating is a number
+        const numRating = parseFloat(rating) || 0;
+        const fullStars = Math.floor(numRating);
+        const hasHalfStar = numRating % 1 >= 0.5;
         const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
         
         let starsHTML = '';
         
+        // Full stars
         for (let i = 0; i < fullStars; i++) {
             starsHTML += '<i class="fas fa-star text-warning"></i>';
         }
         
+        // Half star
         if (hasHalfStar) {
             starsHTML += '<i class="fas fa-star-half-alt text-warning"></i>';
         }
         
+        // Empty stars
         for (let i = 0; i < emptyStars; i++) {
             starsHTML += '<i class="far fa-star text-warning"></i>';
         }
@@ -112,15 +152,20 @@ class Booking {
     // Display services
     static displayServices() {
         const servicesList = document.getElementById('servicesList');
-        const services = Booking.selectedBarber.services || [];
+        const services = Booking.selectedBarber?.services || [];
 
-        if (services.length === 0) {
+        console.log('Displaying services:', services);
+
+        if (!Array.isArray(services) || services.length === 0) {
             servicesList.innerHTML = `
                 <div class="col-12">
                     <div class="text-center py-4">
                         <i class="fas fa-cut fa-3x text-muted mb-3"></i>
                         <h5>No services available</h5>
                         <p class="text-muted">This barber hasn't added any services yet.</p>
+                        <button class="btn btn-outline-secondary" onclick="Booking.prevStep()">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Barber Selection
+                        </button>
                     </div>
                 </div>
             `;
@@ -131,12 +176,12 @@ class Booking {
             <div class="col-md-6 mb-3">
                 <div class="card service-card h-100" onclick="Booking.selectService(${index})">
                     <div class="card-body">
-                        <h5 class="card-title">${service.name}</h5>
+                        <h5 class="card-title">${service.name || 'Service'}</h5>
                         <p class="card-text">${service.description || 'Professional service'}</p>
                         <div class="d-flex justify-content-between align-items-center">
-                            <span class="h5 text-primary mb-0">${service.price} DH</span>
+                            <span class="h5 text-primary mb-0">${service.price || 0} DH</span>
                             <span class="badge bg-light text-dark">
-                                <i class="fas fa-clock"></i> ${service.duration} min
+                                <i class="fas fa-clock"></i> ${service.duration || 30} min
                             </span>
                         </div>
                     </div>
@@ -436,11 +481,15 @@ class Booking {
                 notes: document.getElementById('bookingNotes').value.trim()
             };
 
+            console.log('Submitting booking with data:', bookingData);
+
             // Submit booking
             const response = await Auth.makeRequest('/bookings', {
                 method: 'POST',
                 body: JSON.stringify(bookingData)
             });
+
+            console.log('Booking response:', response);
 
             if (response.success) {
                 Booking.bookingData = response.data;

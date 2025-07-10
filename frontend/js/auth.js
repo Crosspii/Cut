@@ -34,6 +34,10 @@ class Auth {
     static async makeRequest(endpoint, options = {}) {
         const token = Auth.getToken();
         
+        console.log(`Making request to: ${Auth.API_BASE}${endpoint}`);
+        console.log('Token:', token ? 'Present' : 'Missing');
+        console.log('Options:', options);
+        
         const defaultOptions = {
             headers: {
                 'Content-Type': 'application/json',
@@ -50,14 +54,25 @@ class Auth {
             }
         };
         
-        const response = await fetch(`${Auth.API_BASE}${endpoint}`, finalOptions);
-        const data = await response.json();
+        console.log('Final options:', finalOptions);
         
-        if (!response.ok) {
-            throw new Error(data.message || 'Request failed');
+        try {
+            const response = await fetch(`${Auth.API_BASE}${endpoint}`, finalOptions);
+            console.log('Response status:', response.status);
+            console.log('Response headers:', response.headers);
+            
+            const data = await response.json();
+            console.log('Response data:', data);
+            
+            if (!response.ok) {
+                throw new Error(data.message || 'Request failed');
+            }
+            
+            return data;
+        } catch (error) {
+            console.error('makeRequest error:', error);
+            throw error;
         }
-        
-        return data;
     }
     
     // Show alert message
@@ -284,6 +299,12 @@ class Auth {
         }
         
         return true;
+    }
+
+    // Check if user has specific role
+    static checkRole(requiredRole) {
+        const user = Auth.getCurrentUser();
+        return user && user.role === requiredRole;
     }
 }
 

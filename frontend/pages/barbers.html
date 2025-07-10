@@ -153,8 +153,15 @@
                             <i class="fas fa-user"></i> ${user.name}
                         </a>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="dashboard.html">Dashboard</a></li>
-                            ${user.role === 'barber' ? '<li><a class="dropdown-item" href="barber-profile.html">My Profile</a></li>' : ''}
+                            <li><a class="dropdown-item" href="index.html">Home</a></li>
+                            <li><a class="dropdown-item" href="barbers.html">Find Barbers</a></li>
+                            ${user.role === 'customer' ? `
+                                <li><a class="dropdown-item" href="dashboard.html">Dashboard</a></li>
+                                <li><a class="dropdown-item" href="my-bookings.html">My Bookings</a></li>
+                            ` : `
+                                <li><a class="dropdown-item" href="barber-dashboard.html">Barber Dashboard</a></li>
+                                <li><a class="dropdown-item" href="barber-profile.html">Edit Profile</a></li>
+                            `}
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="#" onclick="Auth.logout()">Logout</a></li>
                         </ul>

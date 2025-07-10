@@ -8,6 +8,10 @@ class CustomerDashboard {
     // Initialize dashboard
     static init() {
         const user = Auth.getCurrentUser();
+        console.log('Customer dashboard init - User:', user);
+        console.log('Is logged in:', Auth.isLoggedIn());
+        console.log('Token:', Auth.getToken());
+        
         if (user) {
             document.getElementById('welcomeMessage').textContent = 
                 `Welcome back, ${user.name}! Here's your appointment overview.`;
@@ -49,6 +53,7 @@ class CustomerDashboard {
             }
         } catch (error) {
             console.error('Load stats error:', error);
+            console.error('Error details:', error.message, error.stack);
             CustomerDashboard.displayEmptyStats();
         }
     }
@@ -167,6 +172,7 @@ class CustomerDashboard {
             }
         } catch (error) {
             console.error('Load upcoming error:', error);
+            console.error('Error details:', error.message, error.stack);
             CustomerDashboard.displayEmptyUpcoming();
         }
     }
@@ -278,8 +284,11 @@ class CustomerDashboard {
     // Load favorite barbers (based on booking history)
     static async loadFavoriteBarbers() {
         try {
+            console.log('Loading favorite barbers...');
             // For now, we'll show recent barbers as "favorites"
             const response = await Auth.makeRequest('/bookings/my-bookings?limit=5&status=completed');
+            
+            console.log('Favorites response:', response);
             
             if (response.success) {
                 const recentBookings = response.data.bookings || [];
@@ -300,9 +309,13 @@ class CustomerDashboard {
 
                 CustomerDashboard.favoriteBarbers = uniqueBarbers;
                 CustomerDashboard.displayFavoriteBarbers();
+            } else {
+                console.error('Favorites API error:', response.message);
+                CustomerDashboard.displayEmptyFavorites();
             }
         } catch (error) {
             console.error('Load favorites error:', error);
+            console.error('Error details:', error.message, error.stack);
             CustomerDashboard.displayEmptyFavorites();
         }
     }
@@ -357,15 +370,22 @@ class CustomerDashboard {
     // Load recent activity
     static async loadRecentActivity() {
         try {
+            console.log('Loading recent activity...');
             const response = await Auth.makeRequest('/bookings/my-bookings?limit=5');
+            
+            console.log('Recent activity response:', response);
             
             if (response.success) {
                 const recentBookings = response.data.bookings || [];
                 CustomerDashboard.recentActivity = recentBookings;
                 CustomerDashboard.displayRecentActivity();
+            } else {
+                console.error('Recent activity API error:', response.message);
+                CustomerDashboard.displayEmptyActivity();
             }
         } catch (error) {
             console.error('Load activity error:', error);
+            console.error('Error details:', error.message, error.stack);
             CustomerDashboard.displayEmptyActivity();
         }
     }
@@ -484,14 +504,22 @@ class CustomerDashboard {
         // Load customer's review statistics
     static async loadReviewStats() {
         try {
+            console.log('Loading review stats...');
             const response = await Auth.makeRequest('/reviews/my-reviews');
+            
+            console.log('Review stats response:', response);
             
             if (response.success) {
                 const reviews = response.data.reviews || [];
                 CustomerDashboard.displayReviewStats(reviews);
+            } else {
+                console.error('Review stats API error:', response.message);
+                // Don't show anything for reviews if there are none
             }
         } catch (error) {
             console.error('Load review stats error:', error);
+            console.error('Error details:', error.message, error.stack);
+            // Don't show anything for reviews if there are none
         }
     }
 
@@ -571,10 +599,24 @@ class CustomerDashboard {
     // Refresh dashboard data
     static async refreshData() {
         try {
+            console.log('Refreshing customer dashboard data...');
             await CustomerDashboard.loadDashboardData();
+            console.log('Dashboard refresh completed successfully');
             Auth.showAlert('Dashboard refreshed successfully', 'success');
         } catch (error) {
+            console.error('Dashboard refresh error:', error);
             Auth.showAlert('Failed to refresh data', 'danger');
+        }
+    }
+
+    // Force refresh recent activity only
+    static async refreshRecentActivity() {
+        try {
+            console.log('Refreshing recent activity...');
+            await CustomerDashboard.loadRecentActivity();
+            console.log('Recent activity refresh completed');
+        } catch (error) {
+            console.error('Recent activity refresh error:', error);
         }
     }
 }
