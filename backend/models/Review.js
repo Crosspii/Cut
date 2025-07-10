@@ -14,6 +14,15 @@ class Review {
     // Create new review
     async save() {
         try {
+            console.log('Saving review with data:', {
+                booking_id: this.booking_id,
+                customer_id: this.customer_id,
+                barber_id: this.barber_id,
+                rating: this.rating,
+                comment: this.comment,
+                created_at: this.created_at
+            });
+            
             const query = `
                 INSERT INTO reviews (booking_id, customer_id, barber_id, rating, comment, created_at)
                 VALUES (?, ?, ?, ?, ?, ?)
@@ -28,8 +37,10 @@ class Review {
                 this.created_at
             ]);
             
+            console.log('Review saved successfully with ID:', result.insertId);
             return result.insertId;
         } catch (error) {
+            console.error('Error saving review:', error);
             throw error;
         }
     }
@@ -106,6 +117,8 @@ class Review {
     // Check if booking can be reviewed
     static async canReview(bookingId, customerId) {
         try {
+            console.log('Checking if booking can be reviewed:', { bookingId, customerId });
+            
             // Check if booking is completed and belongs to customer
             const bookingQuery = `
                 SELECT id, status, customer_id, barber_id
@@ -114,7 +127,10 @@ class Review {
             `;
             const bookings = await db.query(bookingQuery, [bookingId, customerId]);
             
+            console.log('Found bookings:', bookings);
+            
             if (bookings.length === 0) {
+                console.log('No completed booking found for this customer');
                 return { canReview: false, reason: 'Booking not found or not completed' };
             }
 
@@ -122,15 +138,20 @@ class Review {
             const reviewQuery = `SELECT id FROM reviews WHERE booking_id = ?`;
             const existingReviews = await db.query(reviewQuery, [bookingId]);
             
+            console.log('Existing reviews:', existingReviews);
+            
             if (existingReviews.length > 0) {
+                console.log('Booking already reviewed');
                 return { canReview: false, reason: 'Booking already reviewed' };
             }
 
+            console.log('Booking can be reviewed');
             return { 
                 canReview: true, 
                 booking: bookings[0] 
             };
         } catch (error) {
+            console.error('Error checking if booking can be reviewed:', error);
             throw error;
         }
     }
@@ -161,7 +182,10 @@ class Review {
     // Update barber profile with new rating
     static async updateBarberRating(barberId) {
         try {
+            console.log('Updating barber rating for barber ID:', barberId);
+            
             const stats = await Review.getBarberStats(barberId);
+            console.log('Barber stats:', stats);
             
             const updateQuery = `
                 UPDATE barber_profiles 
@@ -169,12 +193,18 @@ class Review {
                 WHERE user_id = ?
             `;
             
-            await db.query(updateQuery, [
+            const updateParams = [
                 parseFloat(stats.average_rating) || 0,
                 parseInt(stats.total_reviews) || 0,
                 barberId
-            ]);
+            ];
+            
+            console.log('Update params:', updateParams);
+            
+            await db.query(updateQuery, updateParams);
+            console.log('Barber rating updated successfully');
         } catch (error) {
+            console.error('Error updating barber rating:', error);
             throw error;
         }
     }

@@ -77,8 +77,18 @@ class Auth {
     
     // Show alert message
     static showAlert(message, type = 'info') {
-        const alertContainer = document.getElementById('alert-container');
-        if (!alertContainer) return;
+        console.log('Auth: Showing alert:', message, type);
+        
+        let alertContainer = document.getElementById('alert-container');
+        if (!alertContainer) {
+            // Create alert container if it doesn't exist
+            alertContainer = document.createElement('div');
+            alertContainer.id = 'alert-container';
+            alertContainer.className = 'position-fixed top-0 start-50 translate-middle-x p-3';
+            alertContainer.style.zIndex = '9999';
+            document.body.appendChild(alertContainer);
+            console.log('Auth: Created alert container');
+        }
         
         const alertElement = document.createElement('div');
         alertElement.className = `alert alert-${type} alert-dismissible fade show`;
@@ -92,8 +102,12 @@ class Auth {
         
         // Auto-dismiss after 5 seconds
         setTimeout(() => {
-            alertElement.remove();
+            if (alertElement.parentNode) {
+                alertElement.remove();
+            }
         }, 5000);
+        
+        console.log('Auth: Alert displayed');
     }
     
     // Handle login form

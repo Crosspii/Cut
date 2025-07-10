@@ -302,9 +302,20 @@ class Reviews {
             if (response.success) {
                 Auth.showAlert('Review submitted successfully! Thank you for your feedback.', 'success');
                 
-                // Close modal
+                // Close modal and remove backdrop
                 const modal = bootstrap.Modal.getInstance(document.getElementById('reviewModal'));
                 modal.hide();
+                
+                // Remove backdrop manually to prevent grey overlay
+                const backdrop = document.querySelector('.modal-backdrop');
+                if (backdrop) {
+                    backdrop.remove();
+                }
+                
+                // Remove modal-open class from body
+                document.body.classList.remove('modal-open');
+                document.body.style.overflow = '';
+                document.body.style.paddingRight = '';
                 
                 // Refresh any displays that show reviews
                 if (typeof MyBookings !== 'undefined') {
@@ -317,6 +328,15 @@ class Reviews {
         } catch (error) {
             console.error('Submit review error:', error);
             Auth.showAlert(error.message || 'Failed to submit review. Please try again.', 'danger');
+            
+            // Also clean up modal backdrop on error
+            const backdrop = document.querySelector('.modal-backdrop');
+            if (backdrop) {
+                backdrop.remove();
+            }
+            document.body.classList.remove('modal-open');
+            document.body.style.overflow = '';
+            document.body.style.paddingRight = '';
         } finally {
             // Reset button state
             const submitBtn = document.getElementById('submitReviewBtn');
@@ -400,7 +420,7 @@ class Reviews {
             <div class="row mb-4">
                 <div class="col-md-4">
                     <div class="text-center">
-                        <div class="display-4 fw-bold text-warning">${(stats.average_rating || 0).toFixed(1)}</div>
+                        <div class="display-4 fw-bold text-warning">${(parseFloat(stats.average_rating) || 0).toFixed(1)}</div>
                         <div class="rating-stars mb-2">
                             ${Reviews.generateStarDisplay(stats.average_rating || 0)}
                         </div>
@@ -426,8 +446,9 @@ class Reviews {
 
     // Generate star display
     static generateStarDisplay(rating, size = '') {
-        const fullStars = Math.floor(rating);
-        const hasHalfStar = rating % 1 >= 0.5;
+        const numRating = parseFloat(rating) || 0;
+        const fullStars = Math.floor(numRating);
+        const hasHalfStar = numRating % 1 >= 0.5;
         const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
         
         let starsHTML = '';

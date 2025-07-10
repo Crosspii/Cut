@@ -87,14 +87,26 @@ class Barbers {
         const rating = parseFloat(barber.average_rating) || 0;
         const reviews = parseInt(barber.total_reviews) || 0;
         
+        // Get current user info
+        const currentUser = Auth.getCurrentUser();
+        const isCurrentUserBarber = currentUser && currentUser.role === 'barber';
+        const isOwnProfile = isCurrentUserBarber && currentUser.id === barber.user_id;
+        
         return `
             <div class="col-lg-4 col-md-6 mb-4">
-                <div class="card h-100 barber-card" onclick="Barbers.viewBarber(${barber.id})">
-                    <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                <div class="card h-100 barber-card" onclick="Barbers.viewBarberDetails(${barber.id})">
+                    <div class="card-img-top bg-light d-flex align-items-center justify-content-center position-relative" style="height: 200px;">
                         ${barber.avatar ? 
                             `<img src="${barber.avatar}" alt="${barber.business_name}" class="img-fluid rounded">` :
                             `<i class="fas fa-cut fa-3x text-primary"></i>`
                         }
+                        ${isOwnProfile ? `
+                            <div class="position-absolute top-0 end-0 m-2">
+                                <button class="btn btn-sm btn-outline-primary" onclick="event.stopPropagation(); Barbers.editProfile(${barber.id})" title="Edit Profile">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                            </div>
+                        ` : ''}
                     </div>
                     <div class="card-body">
                         <h5 class="card-title">${barber.business_name || 'Barber Shop'}</h5>
@@ -122,9 +134,15 @@ class Barbers {
                         </div>
                     </div>
                     <div class="card-footer bg-transparent">
-                        <button class="btn btn-primary w-100" onclick="event.stopPropagation(); Barbers.bookNow(${barber.id})">
-                            <i class="fas fa-calendar-check"></i> Book Now
-                        </button>
+                        ${currentUser && currentUser.role === 'customer' ? `
+                            <button class="btn btn-primary w-100" onclick="event.stopPropagation(); Barbers.bookNow(${barber.id})">
+                                <i class="fas fa-calendar-check"></i> Book Now
+                            </button>
+                        ` : `
+                            <button class="btn btn-outline-secondary w-100" disabled>
+                                <i class="fas fa-info-circle"></i> View Details Only
+                            </button>
+                        `}
                     </div>
                 </div>
             </div>
@@ -316,9 +334,124 @@ class Barbers {
         );
     }
     
-    // View barber details
-    static viewBarber(barberId) {
+    // View barber details (for customers and general viewing)
+    static viewBarberDetails(barberId) {
+        // Find the barber data
+        const barber = Barbers.barbersData.find(b => b.id === barberId);
+        if (!barber) {
+            Auth.showAlert('Barber information not found.', 'warning');
+            return;
+        }
+        
+        // Show barber details in a modal
+        Barbers.showBarberDetailsModal(barber);
+    }
+    
+    // Edit barber profile (only for barbers editing their own profile)
+    static editProfile(barberId) {
+        const currentUser = Auth.getCurrentUser();
+        if (!currentUser || currentUser.role !== 'barber') {
+            Auth.showAlert('Only barbers can edit profiles.', 'warning');
+            return;
+        }
+        
+        // Redirect to barber profile edit page
         window.location.href = `barber-profile.html?id=${barberId}`;
+    }
+    
+    // Show barber details modal
+    static showBarberDetailsModal(barber) {
+        const services = Array.isArray(barber.services) ? barber.services : [];
+        const rating = parseFloat(barber.average_rating) || 0;
+        const reviews = parseInt(barber.total_reviews) || 0;
+        
+        const modalHTML = `
+            <div class="modal fade" id="barberDetailsModal" tabindex="-1" aria-labelledby="barberDetailsModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="barberDetailsModalLabel">${barber.business_name || 'Barber Shop'}</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="text-center mb-3">
+                                        ${barber.avatar ? 
+                                            `<img src="${barber.avatar}" alt="${barber.business_name}" class="img-fluid rounded" style="max-width: 200px;">` :
+                                            `<i class="fas fa-cut fa-5x text-primary"></i>`
+                                        }
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="rating mb-2">
+                                            ${Barbers.generateStars(rating)}
+                                            <span class="ms-2">${rating.toFixed(1)} (${reviews} reviews)</span>
+                                        </div>
+                                        <p class="text-muted">
+                                            <i class="fas fa-map-marker-alt"></i> 
+                                            ${barber.neighborhood ? `${barber.neighborhood}, ` : ''}${barber.city || 'Unknown City'}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="col-md-8">
+                                    <h6>About</h6>
+                                    <p>${barber.description || 'Professional barber services'}</p>
+                                    
+                                    <h6>Services</h6>
+                                    <div class="services mb-3">
+                                        ${services.map(service => `
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <span>${service.name}</span>
+                                                <span class="badge bg-primary">${service.price} DH</span>
+                                            </div>
+                                        `).join('')}
+                                        ${services.length === 0 ? '<p class="text-muted">No services listed</p>' : ''}
+                                    </div>
+                                    
+                                    ${barber.working_hours ? `
+                                        <h6>Working Hours</h6>
+                                        <div class="working-hours">
+                                            ${Object.entries(barber.working_hours).map(([day, hours]) => `
+                                                <div class="d-flex justify-content-between">
+                                                    <span>${day.charAt(0).toUpperCase() + day.slice(1)}</span>
+                                                    <span>${hours.open} - ${hours.close}</span>
+                                                </div>
+                                            `).join('')}
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            ${Auth.getCurrentUser() && Auth.getCurrentUser().role === 'customer' ? `
+                                <button type="button" class="btn btn-primary" onclick="Barbers.bookNow(${barber.id})">
+                                    <i class="fas fa-calendar-check"></i> Book Appointment
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Remove existing modal if any
+        const existingModal = document.getElementById('barberDetailsModal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+        
+        // Add modal to page
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('barberDetailsModal'));
+        modal.show();
+        
+        // Clean up modal when hidden
+        document.getElementById('barberDetailsModal').addEventListener('hidden.bs.modal', function() {
+            this.remove();
+        });
     }
     
     // Book appointment
@@ -326,6 +459,13 @@ class Barbers {
         if (!Auth.isLoggedIn()) {
             Auth.showAlert('Please login to book an appointment.', 'warning');
             window.location.href = 'login.html';
+            return;
+        }
+        
+        // Check if user is a customer (barbers shouldn't book appointments)
+        const currentUser = Auth.getCurrentUser();
+        if (currentUser.role !== 'customer') {
+            Auth.showAlert('Only customers can book appointments.', 'warning');
             return;
         }
         

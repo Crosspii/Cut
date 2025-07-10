@@ -28,7 +28,7 @@ const createReview = async (req, res) => {
             customer_id,
             barber_id: canReviewCheck.booking.barber_id,
             rating: parseInt(rating),
-            comment: comment?.trim()
+            comment: comment ? comment.trim() : null
         });
 
         const reviewId = await review.save();
@@ -43,7 +43,9 @@ const createReview = async (req, res) => {
 
     } catch (error) {
         console.error('Create review error:', error);
-        res.status(500).json(errorResponse('Failed to create review'));
+        console.error('Error details:', error.message);
+        console.error('Error stack:', error.stack);
+        res.status(500).json(errorResponse('Failed to create review', { error: error.message }));
     }
 };
 
